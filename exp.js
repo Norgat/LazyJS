@@ -1,7 +1,7 @@
 
 isArray = function (obj) {
     return Array.isArray(obj);
-}
+};
 
 
 ArrayIterator = function (obj) {
@@ -13,20 +13,21 @@ ArrayIterator = function (obj) {
 
     this.hasNext = function () {
 	return state < obj.length;
-    }
+    };
 
     this.next = function () {
 	if (this.hasNext()) {
 	    return obj[state++];
 	}
-    }
+	return undefined;
+    }; 
 
     this.reset = function () {
 	state = 0;
-    }
+    };
 
     return this;
-}
+};
 
 
 MapIterator = function (iterator, fun) {
@@ -34,14 +35,15 @@ MapIterator = function (iterator, fun) {
 	if (iterator.hasNext()) {
 	    return fun(iterator.next());
 	}
-    }
+	return undefined;
+    };
 
     return {
 	next: next,
 	hasNext: iterator.hasNext,
 	reset: iterator.reset
-    }
-}
+    };
+};
 
 
 FilterIterator = function (iterator, pred) {
@@ -61,21 +63,22 @@ FilterIterator = function (iterator, pred) {
 	}
 	
 	return false;
-    }
+    };
 
     var next = function () {
 	if (this.hasNext()) {
 	    not_erased_flag = false;
 	    return buff;
 	}
-    }
+	return undefined;
+    };
 
     return {
 	next: next,
 	hasNext: hasNext,
 	reset: iterator.reset
-    }
-}
+    };
+};
 
 
 WhileIterator = function (iterator, pred) {
@@ -97,7 +100,8 @@ WhileIterator = function (iterator, pred) {
 	} else {
 	    stop_flag = true;
 	}
-    }
+	return undefined;
+    };
 
     var next = function () {
 	if (buff_flag) {
@@ -108,15 +112,16 @@ WhileIterator = function (iterator, pred) {
 		buff_flag = false;
 		return buff;
 	    }
-	}	    
-    }
+	}
+	return undefined;
+    };
 
     return {
 	hasNext: hasNext,
 	next: next,
 	reset: iterator.reset
-    }
-}
+    };
+};
 
 
 ZipIterator = function (iterator, n) {
@@ -131,14 +136,14 @@ ZipIterator = function (iterator, n) {
 	}
 
 	return buff;
-    }
+    };
     
     return {
 	reset: iterator.reset,
 	hasNext: iterator.hasNext,
 	next: next
-    }
-}
+    };
+};
 
 
 Chain = function (iterator, deep) {
@@ -150,7 +155,8 @@ Chain = function (iterator, deep) {
 	if (current_deep == -1) {
 	    return iterator.hasNext();
 	}
-    }
+	return undefined;
+    };
 
     var next = function () {
 	if (hasNext()) {
@@ -162,18 +168,18 @@ Chain = function (iterator, deep) {
 		}
 	    }
 	}
-    }
+    };
 
     var reset = function () {
 	iterator.reset();
-    }
+    };
 
     return {
 	next: next,
 	hasNext: hasNext,
 	reset: reset
-    }
-}
+    };
+};
 
 
 Fold = function (iterator, fun, init) {
@@ -184,7 +190,7 @@ Fold = function (iterator, fun, init) {
     }
 
     return state;
-}
+};
 
 
 lazy = function (arr) {    
@@ -196,26 +202,26 @@ lazy = function (arr) {
     var where = function (pred) {
 	this.source = FilterIterator(this.source, pred);
 	return this;
-    }
+    };
 
     var map = function (fun) {
 	this.source = MapIterator(this.source, fun);
 	return this;
-    }
+    };
 
     var until = function (pred) {
 	this.source = WhileIterator(this.source, pred);
 	return this;
-    }
+    };
 
     var fold = function (fun, init) {
 	return Fold(this.source, fun, init);
-    }
+    };
 
     var zip = function (n) {
 	this.source = ZipIterator(this.source, n);
 	return this;
-    }
+    };
 
     var force = function () {
 	var result = [];
@@ -223,7 +229,7 @@ lazy = function (arr) {
 	    result.push(this.next());
 	}
 	return result;
-    }
+    };
 
     var take = function (n) {
 	if (n > 0) {
@@ -233,7 +239,8 @@ lazy = function (arr) {
 	    }
 	    return result;
 	}
-    }
+	return undefined;
+    };
 
     var drop = function (n) {
 	if (n > 0) {
@@ -242,20 +249,21 @@ lazy = function (arr) {
 	    }
 	    return this;
 	}
-    }
+	return undefined;
+    };
 
     var next = function () {
 	return this.source.next();
-    }
+    };
 
     var hasNext = function () {
 	return this.source.hasNext();
-    }
+    };
 
     var reset = function () {
 	this.source.reset();
 	return this;
-    }
+    };
 
     return {
 	source: source,
@@ -270,5 +278,5 @@ lazy = function (arr) {
 	next: next,
 	reset: reset,
 	zip: zip
-    }
-}
+    };
+};
