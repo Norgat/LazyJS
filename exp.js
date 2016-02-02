@@ -245,6 +245,10 @@ ChainIterator = function (iterator, max_deep) {
     };
 
     var reset = function () {
+	buffer = [];
+	indices = [];
+	elem_buffer = undefined;
+	returned_p = true;
 	iterator.reset();
     };
 
