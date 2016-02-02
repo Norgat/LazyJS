@@ -46,6 +46,8 @@ describe("Lazy module", function () {
     });
 
     describe("lazy", function () {
+	this.timeout(5000);
+	
 	it ("new lazy", function () {
 	    var I = new lazy([1,2,3,4]);
 	});
@@ -112,6 +114,16 @@ describe("Lazy module", function () {
 	    var res = I.zip(2).force();
 
 	    assert.deepEqual(res, [[1,2], [3,4]]);
+	});
+
+	it ("chain", function () {
+	    var I = new lazy([[[1,2],3],4]);
+	    var res = I.chain().force();
+
+	    assert.deepEqual(res, [1,2,3,4]);
+
+	    var J = new lazy([[[1],2],3,4]);
+	    assert.deepEqual(J.chain(1).force(), [[1],2,3,4]);
 	});
     });
 });

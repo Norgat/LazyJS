@@ -146,28 +146,102 @@ ZipIterator = function (iterator, n) {
 };
 
 
-Chain = function (iterator, deep) {
-    var current_deep = -1;
+ChainIterator = function (iterator, max_deep) {
     var buffer = [];
     var indices = [];
 
-    var hasNext = function () {
-	if (current_deep == -1) {
-	    return iterator.hasNext();
-	}
-	return undefined;
-    };
+    var elem_buffer = undefined;
+    var returned_p = true;
 
-    var next = function () {
-	if (hasNext()) {
-	    if (current_deep == -1) {
-		buffer = iterator.next();
-		if (isArray(buffer)) {
-		    current_deep = 1;
-		    indices.push(0);
+    var buffer_extract = function () {
+	var arr = buffer[buffer.length - 1];
+	var indx = indices[indices.length - 1];
+
+	var elem = arr[indx++];
+
+	var process_indx = function () {
+	    if (indx >= arr.length) {
+		buffer.pop();
+		indices.pop();
+
+		// Update index on prev array
+		if (buffer.length > 0) {
+		    indices[indices.length - 1]++;
+		}
+	    } else {
+		indices[indices.length - 1] = indx;
+	    }
+	};
+	
+	if (isArray(elem)) {
+	    if (!(buffer.length >= max_deep)) {
+		buffer.push(elem);
+		indices.push(0);
+		return false;
+	    } else {
+		elem_buffer = elem;
+		returned_p = false;
+
+		process_indx();		
+		return true;
+	    }
+	} else {
+	    elem_buffer = elem;
+	    returned_p = false;
+
+	    process_indx();
+	    return true;
+	}	
+	
+	return false;
+    };
+    
+    var hasNext = function () {
+	while (buffer.length > 0 || iterator.hasNext()) {
+	    // Try extract elem from buffer
+	    if (buffer.length > 0) {
+		var result = buffer_extract();
+		if (result) {
+		    return result;
+		}
+		// Try extract elem from iterator
+	    } else if (iterator.hasNext()) {
+		var elem = iterator.next();
+		if (isArray(elem)) {
+		    // if (deep == undefined) this pred is true
+		    // if (deep is int) then it's equal to (buffer.length < deep)
+		    if (!(buffer.length >= max_deep)) {
+			buffer.push(elem);
+			indices.push(0);
+		    } else {
+			elem_buffer = elem;
+			returned_p = false;
+			return true;
+		    }
+		} else {
+		    elem_buffer = elem;
+		    returned_p = false;
+		    return true;
 		}
 	    }
 	}
+
+	return false;
+    };
+	
+
+    var next = function () {
+	if (!returned_p) {
+	    returned_p = true;
+	    return elem_buffer;
+	}
+
+	if (hasNext()) {
+	    returned_p = true;
+	    return elem_buffer;
+	}
+
+	return undefined;
     };
 
     var reset = function () {
@@ -252,6 +326,11 @@ lazy = function (arr) {
 	return undefined;
     };
 
+    var chain = function (deep) {
+	this.source = ChainIterator(this.source, deep);
+	return this;
+    };    
+
     var next = function () {
 	return this.source.next();
     };
@@ -277,6 +356,7 @@ lazy = function (arr) {
 	hasNext: hasNext,
 	next: next,
 	reset: reset,
-	zip: zip
+	zip: zip,
+	chain: chain
     };
 };
