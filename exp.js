@@ -38,6 +38,8 @@ ArrayIterator = function (obj) {
 	state = 0;
     };
 
+    this.type = 1;
+
     return this;
 };
 
@@ -65,12 +67,23 @@ ObjectIterator = function (obj) {
 
 
 MapIterator = function (iterator, fun) {
-    var next = function () {
-	if (iterator.hasNext()) {
-	    return fun(iterator.next());
-	}
-	return undefined;
-    };
+
+    var next = undefined;
+    if (iterator.type == 1) {
+	next = function () {
+	    if (iterator.hasNext()) {
+		return fun(iterator.next());
+	    }
+	    return undefined;
+	};
+    } else if (iterator.type == 2) {
+	next = function () {
+	    if (iterator.hasNext()) {
+		return fun.apply(this, iterator.next());
+	    }
+	    return undefined;
+	};
+    }
 
     return {
 	next: next,

@@ -67,6 +67,20 @@ describe("Lazy module", function () {
 
 	    assert.equal(I.hasNext(), false);
 	});
+
+	it ("Key-Value map", function () {
+	    var I = new MapIterator(
+		new ObjectIterator({a: 2, b: 3}),
+		function (k, v) { return [k, v]; }
+	    );
+	    var res = {};
+	    while (I.hasNext()) {
+		var tmp = I.next();
+		res[tmp[0]] = tmp[1];
+	    }
+
+	    assert.deepEqual(res, {a: 2, b: 3});
+	});
     });
 
     describe("lazy", function () {
