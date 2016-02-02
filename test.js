@@ -26,6 +26,30 @@ describe("Lazy module", function () {
 	});
     });
 
+    describe("ObjectIterator", function () {
+	it ("new", function () {
+	    var I = new ObjectIterator({a: 2, b: 3});
+	});
+
+	it ("hasNext", function () {
+	    var I = new ObjectIterator({a: 2, b: 3});
+	    assert.equal(I.hasNext(), true);
+	});
+
+	it ("next", function () {
+	    var I = new ObjectIterator({a: 2});
+	    assert.deepEqual(I.next(), ["a", 2]);
+	});
+
+	it ("reset", function () {
+	    var I = new ObjectIterator({a: 2});
+	    assert.deepEqual(I.next(), ["a", 2]);
+	    assert.equal(I.hasNext(), false);
+	    I.reset();
+	    assert.deepEqual(I.next(), ["a", 2]);
+	});
+    });
+
     describe("MapIterator", function () {
 	it ("new", function () {
 	    var I = new MapIterator(new ArrayIterator([1,2,3]), function (x) { return x; });

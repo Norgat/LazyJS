@@ -4,6 +4,18 @@ isArray = function (obj) {
 };
 
 
+getKeys = function (obj) {
+    var lst = [];
+    for (var k in obj) {
+	if (obj.hasOwnProperty(k)) {
+	    lst.push(k);
+	}
+    }
+
+    return lst;
+};
+
+
 ArrayIterator = function (obj) {
     if (!isArray(obj)) {
 	throw new Error("Argument isn't Array.");
@@ -27,6 +39,28 @@ ArrayIterator = function (obj) {
     };
 
     return this;
+};
+
+
+ObjectIterator = function (obj) {
+    var keyIterator = ArrayIterator(getKeys(obj));
+
+    var next = function () {
+	if (keyIterator.hasNext()) {
+	    var key = keyIterator.next();
+	    var val = obj[key];
+	    return [key, val];
+	};
+
+	return undefined;
+    };
+
+    return {
+	hasNext: keyIterator.hasNext,
+	next: next,
+	reset: keyIterator.reset,
+	type: 2
+    };
 };
 
 
