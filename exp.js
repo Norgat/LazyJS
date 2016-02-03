@@ -21,7 +21,7 @@ ArrayIterator = function (obj) {
 	throw new Error("Argument isn't Array.");
     }
 
-    state = 0;
+    var state = 0;
 
     this.hasNext = function () {
 	return state < obj.length;
@@ -189,6 +189,54 @@ ZipIterator = function (iterator, n) {
 	reset: iterator.reset,
 	hasNext: iterator.hasNext,
 	next: next
+    };
+};
+
+
+MultizipIterator = function () {
+
+    var iters = arguments;
+
+    var buffer = undefined;
+    var returned_p = true;
+
+    var hasNext = function () {
+	if (!returned_p) { return true; }
+	
+	var tmp_buf = [];
+	for (var i = 0; i < iters.length; ++i) {
+	    if (iters[i].hasNext()) {
+		tmp_buf.push(iters[i].next());
+	    } else {
+		return false;
+	    }
+	}
+
+	buffer = tmp_buf;
+	returned_p = false;
+	return true;
+    };
+
+    var next = function () {
+	if (hasNext()) {
+	    returned_p = true;
+	    return buffer;
+	}
+
+	return undefined;
+    };
+
+    var reset = function () {
+	for (var i = 0; i < iters.length; ++i) {
+	    iters[i].reset();
+	}
+	returned_p = true;
+    };
+    
+    return {
+	next: next,
+	hasNext: hasNext,
+	reset: reset
     };
 };
 
