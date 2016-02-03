@@ -1,88 +1,203 @@
 
 describe("Lazy module", function () {
 
-    describe("ArrayIterator", function () {
-	it ("new", function () {
-	    var I = new ArrayIterator([1,2,3]);
+    describe("Common iterators", function () {
+	describe("ArrayIterator", function () {
+	    it ("new", function () {
+		var I = new ArrayIterator([1,2,3]);
+	    });
+
+	    it ("next", function () {
+		var I = new ArrayIterator([1,2,3]);
+		assert.equal(I.next(), 1);
+	    });
+
+	    it ("hasNext", function () {
+		var I = new ArrayIterator([1,2,3]);
+		assert.equal(I.hasNext(), true);
+	    });
+
+	    it ("reset", function () {
+		var I = new ArrayIterator([0,1,2,3]);
+		for (var i = 0; i < 4; ++i) {
+		    assert.equal(I.next(), i);
+		}
+
+		I.reset();
+		for (var j = 0; j < 4; ++j) {
+		    assert.equal(I.next(), j);
+		}
+	    });
+
+	    it ("deep next", function () {
+		var I = new ArrayIterator([1,2,3]);
+		for (var i = 1; i < 4; ++i) {
+		    assert.equal(I.next(), i);
+		}
+
+		assert.equal(I.hasNext(), false);
+	    });
 	});
 
-	it ("next", function () {
-	    var I = new ArrayIterator([1,2,3]);
-	    assert.equal(I.next(), 1);
+	describe("ObjectIterator", function () {
+	    it ("new", function () {
+		var I = new ObjectIterator({a: 2, b: 3});
+	    });
+
+	    it ("hasNext", function () {
+		var I = new ObjectIterator({a: 2, b: 3});
+		assert.equal(I.hasNext(), true);
+	    });
+
+	    it ("next", function () {
+		var I = new ObjectIterator({a: 2});
+		assert.deepEqual(I.next(), ["a", 2]);
+	    });
+
+	    it ("reset", function () {
+		var I = new ObjectIterator({a: 2});
+		assert.deepEqual(I.next(), ["a", 2]);
+		assert.equal(I.hasNext(), false);
+		I.reset();
+		assert.deepEqual(I.next(), ["a", 2]);
+	    });
 	});
 
-	it ("hasNext", function () {
-	    var I = new ArrayIterator([1,2,3]);
-	    assert.equal(I.hasNext(), true);
-	});
-
-	it ("deep next", function () {
-	    var I = new ArrayIterator([1,2,3]);
-	    for (var i = 1; i < 4; ++i) {
-		assert.equal(I.next(), i);
-	    }
-
-	    assert.equal(I.hasNext(), false);
-	});
     });
 
-    describe("ObjectIterator", function () {
-	it ("new", function () {
-	    var I = new ObjectIterator({a: 2, b: 3});
-	});
 
-	it ("hasNext", function () {
-	    var I = new ObjectIterator({a: 2, b: 3});
-	    assert.equal(I.hasNext(), true);
-	});
+    describe("Wrap iterators", function () {
 
-	it ("next", function () {
-	    var I = new ObjectIterator({a: 2});
-	    assert.deepEqual(I.next(), ["a", 2]);
-	});
-
-	it ("reset", function () {
-	    var I = new ObjectIterator({a: 2});
-	    assert.deepEqual(I.next(), ["a", 2]);
-	    assert.equal(I.hasNext(), false);
-	    I.reset();
-	    assert.deepEqual(I.next(), ["a", 2]);
-	});
-    });
-
-    describe("MapIterator", function () {
-	it ("new", function () {
-	    var I = new MapIterator(new ArrayIterator([1,2,3]), function (x) { return x; });
-	});
-
-	it ("apply iterator", function () {
-	    var I = new MapIterator(
-		new ArrayIterator([1,2,3]),
-		function (x) { return x; }
-	    );
-
-	    for (var i = 1; i < 4; ++i) {
-		assert.equal(I.next(), i);
-	    }
-
-	    assert.equal(I.hasNext(), false);
-	});
-
-	it ("Key-Value map", function () {
-	    var I = new MapIterator(
-		new ObjectIterator({a: 2, b: 3}),
-		function (k, v) { return [k, v]; }
-	    );
-	    var res = {};
+	var apply_test = function (I, result) {
+	    var res = [];
 	    while (I.hasNext()) {
-		var tmp = I.next();
-		res[tmp[0]] = tmp[1];
+		res.push(I.next());
 	    }
+	    assert.deepEqual(res, result);
+	};
+	
+	describe("MapIterator", function () {
+	    it ("new", function () {
+		var I = new MapIterator(new ArrayIterator([1,2,3]), function (x) { return x; });
+	    });
 
-	    assert.deepEqual(res, {a: 2, b: 3});
+	    it ("apply iterator", function () {
+		var I = new MapIterator(
+		    new ArrayIterator([1,2,3]),
+		    function (x) { return x; }
+		);
+
+		for (var i = 1; i < 4; ++i) {
+		    assert.equal(I.next(), i);
+		}
+
+		assert.equal(I.hasNext(), false);
+	    });
+
+	    it ("Key-Value map", function () {
+		var I = new MapIterator(
+		    new ObjectIterator({a: 2, b: 3}),
+		    function (k, v) { return [k, v]; }
+		);
+		var res = {};
+		while (I.hasNext()) {
+		    var tmp = I.next();
+		    res[tmp[0]] = tmp[1];
+		}
+
+		assert.deepEqual(res, {a: 2, b: 3});
+	    });
+	});
+
+
+	describe("FilterIterator", function () {
+	    it ("new", function () {
+		var I = new FilterIterator(
+		    ArrayIterator([1,2,3]),
+		    function (x) { return x % 2 == 1; }
+		);
+	    });
+
+	    it ("apply iterator", function () {
+		var I = new FilterIterator(
+		    ArrayIterator([0,1,2,3,4,5]),
+		    function (x) { return x % 2 == 0; }
+		);
+
+		apply_test(I, [0,2,4]);
+	    });
+
+	    it ("reset", function () {
+		var I = new FilterIterator(
+		    ArrayIterator([0,1,2,3,4,5]),
+		    function (x) { return x % 2 == 0; }
+		);
+
+		apply_test(I, [0,2,4]);
+		I.reset();
+		apply_test(I, [0,2,4]);
+	    });
+	});
+
+	describe("WhileIterator", function () {
+	    it ("new", function () {
+		var I = new WhileIterator(
+		    ArrayIterator([1,2,3]),
+		    function (x) { return x < 3; }
+		);
+	    });
+
+	    it ("apply iterator", function () {
+		var I = new WhileIterator(
+		    ArrayIterator([0,1,2,3,4,5]),
+		    function (x) { return x < 3; }
+		);
+
+		apply_test(I, [0,1,2]);
+	    });
+
+	    it ("reset", function () {
+		var I = new WhileIterator(
+		    ArrayIterator([0,1,2,3,4,5]),
+		    function (x) { return x < 3; }
+		);
+
+		apply_test(I, [0,1,2]);
+		I.reset();
+		apply_test(I, [0,1,2]);
+	    });
+	});
+
+	describe("ZipIterator", function () {
+	    it ("new", function () {
+		var I = new ZipIterator(
+		    ArrayIterator([1,2,3,4]),
+		    2);
+	    });
+
+	    it ("apply iterator", function () {
+		var I = new ZipIterator(
+		    ArrayIterator([0,1,2,3]),
+		    2
+		);
+
+		apply_test(I, [[0,1],[2,3]]);
+	    });
+
+	    it ("reset", function () {
+		var I = new ZipIterator(
+		    ArrayIterator([0,1,2,3]),
+		    2
+		);
+
+		apply_test(I, [[0,1],[2,3]]);
+		I.reset();
+		apply_test(I, [[0,1],[2,3]]);
+	    });
 	});
     });
-
+    
+    
     describe("lazy", function () {
 	this.timeout(5000);
 	
