@@ -94,6 +94,27 @@ describe("Lazy module", function () {
 		assert.equal(I.hasNext(), false);
 	    });
 
+	    it ("reset", function () {
+		var I = new MapIterator(
+		    new ArrayIterator([1,2,3]),
+		    function (x) { return x; }
+		);
+
+		for (var i = 1; i < 4; ++i) {
+		    assert.equal(I.next(), i);
+		}
+
+		assert.equal(I.hasNext(), false);
+
+		I.reset();
+
+		for (var i = 1; i < 4; ++i) {
+		    assert.equal(I.next(), i);
+		}
+
+		assert.equal(I.hasNext(), false);
+	    });
+
 	    it ("Key-Value map", function () {
 		var I = new MapIterator(
 		    new ObjectIterator({a: 2, b: 3}),
