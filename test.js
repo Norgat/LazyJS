@@ -158,6 +158,21 @@ describe("Lazy module", function () {
 		I.reset();
 		apply_test(I, [0,2,4]);
 	    });
+
+	    it ("Key-Value", function () {
+		var I = new FilterIterator(
+		    ObjectIterator({"a": 2, "b": 3, "c": 4, "d": 5}),
+		    function(k, v) { return v % 2 == 0; }
+		);
+
+		var res = {};
+		while (I.hasNext()) {
+		    var kv = I.next();
+		    res[kv[0]] = kv[1];
+		}
+
+		assert.deepEqual(res, {"a": 2, "c": 4});
+	    });
 	});
 
 	describe("WhileIterator", function () {

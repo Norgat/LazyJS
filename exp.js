@@ -99,13 +99,20 @@ MapIterator = function (iterator, fun) {
 FilterIterator = function (iterator, pred) {
     var buff = undefined;
     var not_erased_flag = false;
+
+    var pred_fun = undefined;
+    if (iterator.type == 1) {
+	pred_fun = pred;
+    } else if (iterator.type == 2) {
+	pred_fun = function (key_value) { return pred.apply(this, key_value); };
+    }
     
     var hasNext = function () {
 	if (not_erased_flag) { return true; }
 	
 	while (iterator.hasNext()) {
 	    var item = iterator.next();
-	    if (pred(item)) {
+	    if (pred_fun(item)) {
 		buff = item;
 		not_erased_flag = true;
 		return true;
@@ -126,7 +133,8 @@ FilterIterator = function (iterator, pred) {
     return {
 	next: next,
 	hasNext: hasNext,
-	reset: iterator.reset
+	reset: iterator.reset,
+	type: iterator.type
     };
 };
 
