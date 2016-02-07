@@ -271,6 +271,17 @@ describe("Lazy module", function () {
 	});
     });
     
+
+    describe("Single functions", function () {
+	it ("Fold Key-Value", function () {
+	    var I = ArrayIterator([[2,2], [2,2], [2,2], [2,2]]);
+	    I.type = 2;
+	    
+	    var res = Fold(I, function (st, k, v) { return st + k + v; }, 0);
+	    assert.equal(res, 16);
+	});
+    });
+    
     
     describe("lazy", function () {
 	this.timeout(5000);

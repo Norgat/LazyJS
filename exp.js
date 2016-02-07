@@ -207,7 +207,8 @@ ZipIterator = function (iterator, n) {
     return {
 	reset: iterator.reset,
 	hasNext: iterator.hasNext,
-	next: next
+	next: next,
+	type: 1
     };
 };
 
@@ -255,7 +256,8 @@ MultizipIterator = function () {
     return {
 	next: next,
 	hasNext: hasNext,
-	reset: reset
+	reset: reset,
+	type: 1
     };
 };
 
@@ -369,7 +371,8 @@ ChainIterator = function (iterator, max_deep) {
     return {
 	next: next,
 	hasNext: hasNext,
-	reset: reset
+	reset: reset,
+	type: 1
     };
 };
 
@@ -377,8 +380,17 @@ ChainIterator = function (iterator, max_deep) {
 Fold = function (iterator, fun, init) {
     var state = init;
 
+    var apply_fun = undefined;
+    if (iterator.type == 1) {
+	apply_fun = fun;
+    } else if (iterator.type == 2) {
+	apply_fun = function (state, kv) {
+	    return fun(state, kv[0], kv[1]);
+	};
+    }
+
     while (iterator.hasNext()) {
-	state = fun(state, iterator.next());
+	state = apply_fun(state, iterator.next());
     }
 
     return state;
