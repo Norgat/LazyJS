@@ -290,10 +290,41 @@ describe("Lazy module", function () {
 	    var I = new lazy([1,2,3,4]);
 	});
 
+	it ("new KV lazy", function () {
+	    var I = new lazy({"a": 1, "b": 2});
+	});
+
+	it ("next & hasNext this KV lazy", function () {
+	    var I = new lazy({"a": 1, "b": 2});
+
+	    assert.equal(I.hasNext(), true);
+
+	    var res = {};
+	    while (I.hasNext()) {
+		var kv = I.next();
+		res[kv[0]] = kv[1];
+	    }
+
+	    assert.deepEqual(res, {"a": 1, "b": 2});
+	});
+
 	it ("force", function () {
 	    var I = new lazy([1,2,3,4]);
 	    var res = I.force();
 	    assert.deepEqual(res, [1,2,3,4]);
+	});
+
+	it ("KV force", function () {
+	    var d = {"a": 1, "b": 2};
+	    var I = new lazy(d);
+
+	    var res = {};
+	    while (I.hasNext()) {
+		var kv = I.next();
+		res[kv[0]] = kv[1];
+	    }
+
+	    assert.deepEqual(res, d);
 	});
 
 	it ("drop", function () {
@@ -312,6 +343,14 @@ describe("Lazy module", function () {
 	    var I = new lazy([1,2,3,4]);
 	    var res = I.fold(function (state, x) { return state + x; }, 0);
 	    assert.equal(res, 10);
+	});
+
+	it ("KV fold", function () {
+	    var d = {2: 3, 4: 5};
+	    var I = new lazy(d);
+	    
+	    var res = I.fold(function (state, k, v) { return state + parseInt(k) + v;}, 0);
+	    assert.equal(res, 14);
 	});
 
 	it ("reset", function () {
@@ -339,12 +378,28 @@ describe("Lazy module", function () {
 	    assert.deepEqual(res, [1,3]);
 	});
 
+	it ("KV where", function () {
+	    var d = {"a": 2, "b": 3};
+	    var I = new lazy(d);
+	    
+	    var res = I.where(function (k, v) { return v % 2 == 0;}).force();
+	    assert.deepEqual(res, [["a", 2]]);
+	});
+
 	it ("map", function () {
 	    var I = new lazy([1,2,3,4]);
 	    var res = I.map(function (x) { return x + 2; });
 
 	    var first = res.hasNext();
 	    assert.deepEqual(res.force(), [3,4,5,6]);
+	});
+
+	it ("KV map", function () {
+	    var d = {"b": 3};
+	    var I = new lazy(d);
+	    var res = I.map(function (k, v) { return [k, v+1]; }).force();
+
+	    assert.deepEqual(res, [["b", 4]]);
 	});
 
 	it ("zip", function () {

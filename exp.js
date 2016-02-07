@@ -497,6 +497,7 @@ lazy = function (arr) {
 	next: next,
 	reset: reset,
 	zip: zip,
-	chain: chain
+	chain: chain,
+	type: source.type
     };
 };
