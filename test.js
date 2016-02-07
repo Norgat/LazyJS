@@ -71,7 +71,8 @@ describe("Lazy module", function () {
 	var apply_test = function (I, result) {
 	    var res = [];
 	    while (I.hasNext()) {
-		res.push(I.next());
+		var tmp = I.next();
+		res.push(tmp);
 	    }
 	    assert.deepEqual(res, result);
 	};
@@ -201,6 +202,17 @@ describe("Lazy module", function () {
 		apply_test(I, [0,1,2]);
 		I.reset();
 		apply_test(I, [0,1,2]);
+	    });
+
+	    it ("Key-Value", function () {
+		var source = ArrayIterator([[2,2], [2,1], [3,4], [6,6], [7,8]]);
+		source.type = 2;
+		var I = new WhileIterator(
+		    source,
+		    function (k, v) { return k % 2 == 0; }
+		);
+
+		apply_test(I, [[2,2], [2,1]]);
 	    });
 	});
 

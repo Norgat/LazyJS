@@ -144,11 +144,18 @@ WhileIterator = function (iterator, pred) {
     var buff = undefined;
     var buff_flag = false;
 
+    var pred_fun = undefined;
+    if (iterator.type == 1) {
+	pred_fun = pred;
+    } else if (iterator.type == 2) {
+	pred_fun = function(kv) { return pred.apply(this, kv); };
+    }
+
     var hasNext = function () {
 	if (stop_flag) { return false; }
 	if (iterator.hasNext()) {
 	    buff = iterator.next();
-	    if (pred(buff)) {
+	    if (pred_fun(buff)) {
 		buff_flag = true;
 		return true;
 	    } else {
@@ -177,7 +184,8 @@ WhileIterator = function (iterator, pred) {
     return {
 	hasNext: hasNext,
 	next: next,
-	reset: iterator.reset
+	reset: iterator.reset,
+	type: iterator.type
     };
 };
 
