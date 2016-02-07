@@ -23,24 +23,27 @@ ArrayIterator = function (obj) {
 
     var state = 0;
 
-    this.hasNext = function () {
+    var hasNext = function () {
 	return state < obj.length;
     };
 
-    this.next = function () {
+    var next = function () {
 	if (this.hasNext()) {
 	    return obj[state++];
 	}
 	return undefined;
     }; 
 
-    this.reset = function () {
+    var reset = function () {
 	state = 0;
     };
 
-    this.type = 1;
-
-    return this;
+    return {
+	hasNext: hasNext,
+	next: next,
+	reset: reset,
+	type: 1
+    };
 };
 
 
