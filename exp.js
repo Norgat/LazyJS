@@ -3,6 +3,10 @@ isArray = function (obj) {
     return Array.isArray(obj);
 };
 
+// HACK
+isObject = function (obj) {
+    return (typeof obj == "object");
+};
 
 getKeys = function (obj) {
     var lst = [];
@@ -191,6 +195,10 @@ WhileIterator = function (iterator, pred) {
 
 
 ZipIterator = function (iterator, n) {
+    if (typeof n != "number" || n < 1) {
+	throw new Error("ZipIterator: Invalid zip number");
+    }
+    
     var next = function () {
 	var buff = new Array(n);
 	for (var i = 0; i < n; ++i) {
@@ -398,9 +406,11 @@ Fold = function (iterator, fun, init) {
 
 
 lazy = function (arr) {    
-    var source = arr;
+    var source = undefined;
     if (isArray(arr)) {
 	source = ArrayIterator(arr);
+    } else if (isObject(arr)) {
+	source = ObjectIterator(arr);
     }
 
     var where = function (pred) {
