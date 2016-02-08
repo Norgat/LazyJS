@@ -402,7 +402,10 @@ Fold = function (iterator, fun, init) {
 
 lazy = function (arr) {    
     this.source = undefined;
-    if (isArray(arr)) {
+
+    if (LazyIterator.prototype.isPrototypeOf(arr)) {
+	this.source = arr;
+    } else if (isArray(arr)) {
 	this.source = new ArrayIterator(arr);
     } else if (isObject(arr)) {
 	this.source = new ObjectIterator(arr);

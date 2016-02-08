@@ -418,5 +418,12 @@ describe("Lazy module", function () {
 	    var J = new lazy([[[1],2],3,4]);
 	    assert.deepEqual(J.chain(1).force(), [[1],2,3,4]);
 	});
+
+	it ("Iterator as intial value", function () {
+	    var I = new ArrayIterator([1,2,3]);
+	    var J = new lazy(I);
+
+	    assert.deepEqual(J.force(), [1,2,3]);
+	});
     });
 });
