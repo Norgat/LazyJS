@@ -20,6 +20,21 @@ getKeys = function (obj) {
 };
 
 
+LazyIterator = function () {};
+
+LazyIterator.prototype.next = function () {
+    throw new Error("Realization of next() is undefined.");
+};
+
+LazyIterator.prototype.hasNext = function () {
+    throw new Error("Realization of hasNext() is undefined.");
+};
+
+LazyIterator.prototype.reset = function () {
+    throw new Error("Realisation of reset() is undefined.");
+};
+
+
 ArrayIterator = function (obj) {
     if (!isArray(obj)) {
 	throw new Error("Argument isn't Array.");
@@ -27,34 +42,31 @@ ArrayIterator = function (obj) {
 
     var state = 0;
 
-    var hasNext = function () {
+    this.hasNext = function () {
 	return state < obj.length;
     };
 
-    var next = function () {
+    this.next = function () {
 	if (this.hasNext()) {
 	    return obj[state++];
 	}
 	return undefined;
     }; 
 
-    var reset = function () {
+    this.reset = function () {
 	state = 0;
     };
 
-    return {
-	hasNext: hasNext,
-	next: next,
-	reset: reset,
-	type: 1
-    };
+    this.type = 1;
 };
+
+ArrayIterator.prototype = LazyIterator.prototype;
 
 
 ObjectIterator = function (obj) {
-    var keyIterator = ArrayIterator(getKeys(obj));
+    var keyIterator = new ArrayIterator(getKeys(obj));
 
-    var next = function () {
+    this.next = function () {
 	if (keyIterator.hasNext()) {
 	    var key = keyIterator.next();
 	    var val = obj[key];
@@ -64,27 +76,24 @@ ObjectIterator = function (obj) {
 	return undefined;
     };
 
-    return {
-	hasNext: keyIterator.hasNext,
-	next: next,
-	reset: keyIterator.reset,
-	type: 2
-    };
+    this.hasNext = keyIterator.hasNext;
+    this.reset = keyIterator.reset;
+    this.type = 2;
 };
+
+ObjectIterator.prototype = LazyIterator.prototype;
 
 
 MapIterator = function (iterator, fun) {
-
-    var next = undefined;
     if (iterator.type == 1) {
-	next = function () {
+	this.next = function () {
 	    if (iterator.hasNext()) {
 		return fun(iterator.next());
 	    }
 	    return undefined;
 	};
     } else if (iterator.type == 2) {
-	next = function () {
+	this.next = function () {
 	    if (iterator.hasNext()) {
 		return fun.apply(this, iterator.next());
 	    }
@@ -92,12 +101,12 @@ MapIterator = function (iterator, fun) {
 	};
     }
 
-    return {
-	next: next,
-	hasNext: iterator.hasNext,
-	reset: iterator.reset
-    };
+    this.hasNext = iterator.hasNext;
+    this.reset = iterator.reset;
+    this.type = iterator.type;
 };
+
+MapIterator.prototype = LazyIterator.prototype;
 
 
 FilterIterator = function (iterator, pred) {
@@ -111,7 +120,7 @@ FilterIterator = function (iterator, pred) {
 	pred_fun = function (key_value) { return pred.apply(this, key_value); };
     }
     
-    var hasNext = function () {
+    this.hasNext = function () {
 	if (not_erased_flag) { return true; }
 	
 	while (iterator.hasNext()) {
@@ -126,7 +135,7 @@ FilterIterator = function (iterator, pred) {
 	return false;
     };
 
-    var next = function () {
+    this.next = function () {
 	if (this.hasNext()) {
 	    not_erased_flag = false;
 	    return buff;
@@ -134,13 +143,11 @@ FilterIterator = function (iterator, pred) {
 	return undefined;
     };
 
-    return {
-	next: next,
-	hasNext: hasNext,
-	reset: iterator.reset,
-	type: iterator.type
-    };
+    this.reset = iterator.reset;
+    this.type = iterator.type;
 };
+
+FilterIterator.prototype = LazyIterator.prototype;
 
 
 WhileIterator = function (iterator, pred) {
@@ -155,7 +162,7 @@ WhileIterator = function (iterator, pred) {
 	pred_fun = function(kv) { return pred.apply(this, kv); };
     }
 
-    var hasNext = function () {
+    this.hasNext = function () {
 	if (stop_flag) { return false; }
 	if (iterator.hasNext()) {
 	    buff = iterator.next();
@@ -172,7 +179,7 @@ WhileIterator = function (iterator, pred) {
 	return undefined;
     };
 
-    var next = function () {
+    this.next = function () {
 	if (buff_flag) {
 	    buff_flag = false;
 	    return buff;
@@ -185,13 +192,11 @@ WhileIterator = function (iterator, pred) {
 	return undefined;
     };
 
-    return {
-	hasNext: hasNext,
-	next: next,
-	reset: iterator.reset,
-	type: iterator.type
-    };
+    this.reset = iterator.reset;
+    this.type = iterator.type;
 };
+
+WhileIterator.prototype = LazyIterator.prototype;
 
 
 ZipIterator = function (iterator, n) {
@@ -199,7 +204,7 @@ ZipIterator = function (iterator, n) {
 	throw new Error("ZipIterator: Invalid zip number");
     }
     
-    var next = function () {
+    this.next = function () {
 	var buff = new Array(n);
 	for (var i = 0; i < n; ++i) {
 	    if (iterator.hasNext()) {
@@ -211,24 +216,21 @@ ZipIterator = function (iterator, n) {
 
 	return buff;
     };
-    
-    return {
-	reset: iterator.reset,
-	hasNext: iterator.hasNext,
-	next: next,
-	type: 1
-    };
+
+    this.hasNext = iterator.hasNext;
+    this.reset = iterator.reset;
+    this.type = 1;
 };
+
+ZipIterator.prototype = LazyIterator.prototype;
 
 
 MultizipIterator = function () {
-
     var iters = arguments;
-
     var buffer = undefined;
     var returned_p = true;
 
-    var hasNext = function () {
+    this.hasNext = function () {
 	if (!returned_p) { return true; }
 	
 	var tmp_buf = [];
@@ -245,29 +247,25 @@ MultizipIterator = function () {
 	return true;
     };
 
-    var next = function () {
+    this.next = function () {
 	if (hasNext()) {
 	    returned_p = true;
 	    return buffer;
 	}
-
 	return undefined;
     };
 
-    var reset = function () {
+    this.reset = function () {
 	for (var i = 0; i < iters.length; ++i) {
 	    iters[i].reset();
 	}
 	returned_p = true;
     };
-    
-    return {
-	next: next,
-	hasNext: hasNext,
-	reset: reset,
-	type: 1
-    };
+
+    this.type = 1;
 };
+
+MultizipIterator.prototype = LazyIterator.prototype;
 
 
 ChainIterator = function (iterator, max_deep) {
@@ -320,7 +318,7 @@ ChainIterator = function (iterator, max_deep) {
 	return false;
     };
     
-    var hasNext = function () {
+    this.hasNext = function () {
 	while (buffer.length > 0 || iterator.hasNext()) {
 	    // Try extract elem from buffer
 	    if (buffer.length > 0) {
@@ -354,7 +352,7 @@ ChainIterator = function (iterator, max_deep) {
     };
 	
 
-    var next = function () {
+    this.next = function () {
 	if (!returned_p) {
 	    returned_p = true;
 	    return elem_buffer;
@@ -368,7 +366,7 @@ ChainIterator = function (iterator, max_deep) {
 	return undefined;
     };
 
-    var reset = function () {
+    this.reset = function () {
 	buffer = [];
 	indices = [];
 	elem_buffer = undefined;
@@ -376,13 +374,10 @@ ChainIterator = function (iterator, max_deep) {
 	iterator.reset();
     };
 
-    return {
-	next: next,
-	hasNext: hasNext,
-	reset: reset,
-	type: 1
-    };
+    this.type = 1;
 };
+
+ChainIterator.prototype = LazyIterator.prototype;
 
 
 Fold = function (iterator, fun, init) {
@@ -406,38 +401,38 @@ Fold = function (iterator, fun, init) {
 
 
 lazy = function (arr) {    
-    var source = undefined;
+    this.source = undefined;
     if (isArray(arr)) {
-	source = ArrayIterator(arr);
+	this.source = new ArrayIterator(arr);
     } else if (isObject(arr)) {
-	source = ObjectIterator(arr);
+	this.source = new ObjectIterator(arr);
     }
 
-    var where = function (pred) {
-	this.source = FilterIterator(this.source, pred);
+    this.where = function (pred) {
+	this.source = new FilterIterator(this.source, pred);
 	return this;
     };
 
-    var map = function (fun) {
-	this.source = MapIterator(this.source, fun);
+    this.map = function (fun) {
+	this.source = new MapIterator(this.source, fun);
 	return this;
     };
 
-    var until = function (pred) {
-	this.source = WhileIterator(this.source, pred);
+    this.until = function (pred) {
+	this.source = new WhileIterator(this.source, pred);
 	return this;
     };
 
-    var fold = function (fun, init) {
+    this.fold = function (fun, init) {
 	return Fold(this.source, fun, init);
     };
 
-    var zip = function (n) {
-	this.source = ZipIterator(this.source, n);
+    this.zip = function (n) {
+	this.source = new ZipIterator(this.source, n);
 	return this;
     };
 
-    var force = function () {
+    this.force = function () {
 	var result = [];
 	while (this.hasNext()) {
 	    result.push(this.next());
@@ -445,7 +440,7 @@ lazy = function (arr) {
 	return result;
     };
 
-    var take = function (n) {
+    this.take = function (n) {
 	if (n > 0) {
 	    var result = [];
 	    while(this.hasNext() && n-- > 0) {
@@ -456,7 +451,7 @@ lazy = function (arr) {
 	return undefined;
     };
 
-    var drop = function (n) {
+    this.drop = function (n) {
 	if (n > 0) {
 	    while(this.hasNext() && n-- > 0) {
 		this.next();
@@ -466,38 +461,23 @@ lazy = function (arr) {
 	return undefined;
     };
 
-    var chain = function (deep) {
-	this.source = ChainIterator(this.source, deep);
+    this.chain = function (deep) {
+	this.source = new ChainIterator(this.source, deep);
 	return this;
     };    
 
-    var next = function () {
+    this.next = function () {
 	return this.source.next();
     };
 
-    var hasNext = function () {
+    this.hasNext = function () {
 	return this.source.hasNext();
     };
 
-    var reset = function () {
+    this.reset = function () {
 	this.source.reset();
 	return this;
     };
-
-    return {
-	source: source,
-	where: where,
-	map: map,
-	until: until,
-	fold: fold,
-	force: force,
-	take: take,
-	drop: drop,
-	hasNext: hasNext,
-	next: next,
-	reset: reset,
-	zip: zip,
-	chain: chain,
-	type: source.type
-    };
 };
+
+lazy.prototype = LazyIterator.prototype;

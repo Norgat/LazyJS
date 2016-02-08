@@ -135,14 +135,14 @@ describe("Lazy module", function () {
 	describe("FilterIterator", function () {
 	    it ("new", function () {
 		var I = new FilterIterator(
-		    ArrayIterator([1,2,3]),
+		    new ArrayIterator([1,2,3]),
 		    function (x) { return x % 2 == 1; }
 		);
 	    });
 
 	    it ("apply iterator", function () {
 		var I = new FilterIterator(
-		    ArrayIterator([0,1,2,3,4,5]),
+		    new ArrayIterator([0,1,2,3,4,5]),
 		    function (x) { return x % 2 == 0; }
 		);
 
@@ -151,7 +151,7 @@ describe("Lazy module", function () {
 
 	    it ("reset", function () {
 		var I = new FilterIterator(
-		    ArrayIterator([0,1,2,3,4,5]),
+		    new ArrayIterator([0,1,2,3,4,5]),
 		    function (x) { return x % 2 == 0; }
 		);
 
@@ -162,7 +162,7 @@ describe("Lazy module", function () {
 
 	    it ("Key-Value", function () {
 		var I = new FilterIterator(
-		    ObjectIterator({"a": 2, "b": 3, "c": 4, "d": 5}),
+		    new ObjectIterator({"a": 2, "b": 3, "c": 4, "d": 5}),
 		    function(k, v) { return v % 2 == 0; }
 		);
 
@@ -179,14 +179,14 @@ describe("Lazy module", function () {
 	describe("WhileIterator", function () {
 	    it ("new", function () {
 		var I = new WhileIterator(
-		    ArrayIterator([1,2,3]),
+		    new ArrayIterator([1,2,3]),
 		    function (x) { return x < 3; }
 		);
 	    });
 
 	    it ("apply iterator", function () {
 		var I = new WhileIterator(
-		    ArrayIterator([0,1,2,3,4,5]),
+		    new ArrayIterator([0,1,2,3,4,5]),
 		    function (x) { return x < 3; }
 		);
 
@@ -195,7 +195,7 @@ describe("Lazy module", function () {
 
 	    it ("reset", function () {
 		var I = new WhileIterator(
-		    ArrayIterator([0,1,2,3,4,5]),
+		    new ArrayIterator([0,1,2,3,4,5]),
 		    function (x) { return x < 3; }
 		);
 
@@ -205,7 +205,7 @@ describe("Lazy module", function () {
 	    });
 
 	    it ("Key-Value", function () {
-		var source = ArrayIterator([[2,2], [2,1], [3,4], [6,6], [7,8]]);
+		var source = new ArrayIterator([[2,2], [2,1], [3,4], [6,6], [7,8]]);
 		source.type = 2;
 		var I = new WhileIterator(
 		    source,
@@ -219,13 +219,13 @@ describe("Lazy module", function () {
 	describe("ZipIterator", function () {
 	    it ("new", function () {
 		var I = new ZipIterator(
-		    ArrayIterator([1,2,3,4]),
+		    new ArrayIterator([1,2,3,4]),
 		    2);
 	    });
 
 	    it ("apply iterator", function () {
 		var I = new ZipIterator(
-		    ArrayIterator([0,1,2,3]),
+		    new ArrayIterator([0,1,2,3]),
 		    2
 		);
 
@@ -234,7 +234,7 @@ describe("Lazy module", function () {
 
 	    it ("reset", function () {
 		var I = new ZipIterator(
-		    ArrayIterator([0,1,2,3]),
+		    new ArrayIterator([0,1,2,3]),
 		    2
 		);
 
@@ -247,7 +247,7 @@ describe("Lazy module", function () {
 	describe("Multizipiterator", function () {
 	    it ("new", function () {
 		var I = new MultizipIterator(
-		    ArrayIterator([1,2]), ArrayIterator([1,2])
+		    new ArrayIterator([1,2]), ArrayIterator([1,2])
 		);
 	    });
 
@@ -274,7 +274,7 @@ describe("Lazy module", function () {
 
     describe("Single functions", function () {
 	it ("Fold Key-Value", function () {
-	    var I = ArrayIterator([[2,2], [2,2], [2,2], [2,2]]);
+	    var I = new ArrayIterator([[2,2], [2,2], [2,2], [2,2]]);
 	    I.type = 2;
 	    
 	    var res = Fold(I, function (st, k, v) { return st + k + v; }, 0);
