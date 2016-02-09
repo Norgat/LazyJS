@@ -397,13 +397,18 @@ MultiChainIterator = function () {
 	throw new Error("Too few arguments passed to MailtiChainIterator.");
     }
 
-    if (arguments.length == 1) {
-	return argToIterator(arguments[0]);
+    var args = arguments;
+    if (arguments.length == 2 && arguments[0] == '__lazy_js_constructor') {
+	args = arguments[1];
+    }
+
+    if (args.length == 1) {
+	return argToIterator(args[0]);
     }
 
     var iterators = [];
-    for (var i in arguments) {
-	iterators.push(argToIterator(arguments[i]));
+    for (var i in args) {
+	iterators.push(argToIterator(args[i]));
     }
 
     var indx = 0;
@@ -461,8 +466,8 @@ Fold = function (iterator, fun, init) {
 };
 
 
-lazy = function (arr) {    
-    this.source = argToIterator(arr);
+lazy = function () {    
+    this.source = new MultiChainIterator('__lazy_js_constructor', arguments);
 
     this.where = function (pred) {
 	this.source = new FilterIterator(this.source, pred);

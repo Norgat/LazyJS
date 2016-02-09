@@ -470,5 +470,10 @@ describe("Lazy module", function () {
 
 	    assert.deepEqual(J.force(), [1,2,3]);
 	});
+
+	it ("Multi input value", function () {
+	    var I = new lazy([1,2,3], [2,3]);
+	    assert.deepEqual(I.force(), [1,2,3,2,3]);
+	});
     });
 });
