@@ -380,6 +380,67 @@ ChainIterator = function (iterator, max_deep) {
 ChainIterator.prototype = LazyIterator.prototype;
 
 
+argToIterator = function (arr) {
+    if (LazyIterator.prototype.isPrototypeOf(arr)) {
+	return arr;
+    } else if (isArray(arr)) {
+	return new ArrayIterator(arr);
+    } else if (isObject(arr)) {
+	return new ObjectIterator(arr);
+    }
+    throw new Error("Ivalid argument type!");
+};
+
+
+MultiChainIterator = function () {
+    if (arguments.length < 1) {
+	throw new Error("Too few arguments passed to MailtiChainIterator.");
+    }
+
+    if (arguments.length == 1) {
+	return argToIterator(arguments[0]);
+    }
+
+    var iterators = [];
+    for (var i in arguments) {
+	iterators.push(argToIterator(arguments[i]));
+    }
+
+    var indx = 0;
+
+    this.hasNext = function () {
+	while (indx < iterators.length && !iterators[indx].hasNext()) {
+	    indx++;
+	}
+
+	if (indx >= iterators.length) {
+	    return false;
+	} else {
+	    return true;
+	}	
+    };
+
+    this.next = function () {
+	if (this.hasNext()) {
+	    return iterators[indx].next();
+	} else {
+	    return undefined;
+	}
+    };
+
+    this.reset = function () {
+	for (var i in iterators) {
+	    iterators[i].reset();
+	}
+	indx = 0;
+    };
+
+    this.type = 1;
+};
+
+MultiChainIterator.prototype = LazyIterator.prototype;
+
+
 Fold = function (iterator, fun, init) {
     var state = init;
 
@@ -401,15 +462,7 @@ Fold = function (iterator, fun, init) {
 
 
 lazy = function (arr) {    
-    this.source = undefined;
-
-    if (LazyIterator.prototype.isPrototypeOf(arr)) {
-	this.source = arr;
-    } else if (isArray(arr)) {
-	this.source = new ArrayIterator(arr);
-    } else if (isObject(arr)) {
-	this.source = new ObjectIterator(arr);
-    }
+    this.source = argToIterator(arr);
 
     this.where = function (pred) {
 	this.source = new FilterIterator(this.source, pred);

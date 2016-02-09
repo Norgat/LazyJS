@@ -269,6 +269,51 @@ describe("Lazy module", function () {
 		apply_test(I, [["a", 1], ["b", 2]]);
 	    });
 	});
+
+
+	describe("MuiltiChainIterator", function () {
+	    it ("new", function () {
+		var I = new MultiChainIterator(
+		    new ArrayIterator([1,2,3]),
+		    [1,2,3]);		
+	    });
+
+	    it ("hasNext", function () {
+		var I = new MultiChainIterator(
+		    new ArrayIterator([1,2,3]),
+		    [1,2,3]);
+
+		for (var i = 0; i < 6; ++i) {
+		    I.next();
+		}
+
+		assert.equal(I.hasNext(), false);
+	    });
+
+	    it ("next", function () {
+		var I = new MultiChainIterator(
+		    new ArrayIterator([1,2,3]),
+		    [1,2,3]);
+
+		assert.equal(I.next(), 1);
+	    });
+
+	    it ("reset", function () {
+		var I = new MultiChainIterator(
+		    new ArrayIterator([1,2,3]),
+		    [1,2,3]);
+
+		I.next();
+		I.reset();
+
+		for (var i = 0; i < 6; ++i) {
+		    assert.equal(I.hasNext(), true);
+		    I.next();
+		}
+
+		assert.equal(I.hasNext(), false);
+	    });
+	});
     });
     
 
