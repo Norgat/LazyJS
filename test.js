@@ -479,4 +479,77 @@ describe("Lazy module", function () {
 	    assert.deepEqual(I.force(), [1,2,3,2,3]);
 	});
     });
+
+
+    describe ("zip", function () {
+	it ("new", function () {
+	    var I = new zip([1,2], [3,4]);
+	});
+
+	it ("hasNext", function () {
+	    var I = new zip([1,2], [3,4]);
+	    assert.equal(I.hasNext(), true);
+	});
+
+	it ("next", function () {
+	    var I = new zip([1,2], [3,4]);
+	    var res = I.next();
+	    assert.deepEqual(res, [1,3]);
+	});
+
+	it ("force", function () {
+	    var I = new zip([1,2], [3,4]);
+	    assert.deepEqual(I.force(), [[1,3], [2,4]]);
+	});
+
+	it ("reset", function () {
+	    var I = new zip([1,2], [3,4]);
+	    assert.deepEqual(I.force(), [[1,3], [2,4]]);
+	    I.reset();
+	    assert.deepEqual(I.force(), [[1,3], [2,4]]);
+	});
+
+	it ("drop", function () {
+	    var I = new zip([1,2], [3,4]);
+	    assert.deepEqual(I.drop(1).force(), [[2,4]]);
+	});
+
+	it ("take", function () {
+	    var I = new zip([1,1,1], [2,2,2]);
+	    assert.deepEqual(I.take(2), [[1,2], [1,2]]);
+	});
+
+	it ("fold", function () {
+	    var I = new zip([1,1,1], [2,2,2]);
+	    assert.equal(I.fold(function (st, x) {
+		return st + x[0];
+	    }, 0), 3);
+	});
+
+	it ("until", function () {
+	    var I = new zip([1,2,3,4,5], [2,2,2,2,2]);
+	    assert.equal(
+		I.until(function (x) { return x[0] < 4; }).fold(
+		    function (st, x) { return st + x[1]; }, 0),
+		6);
+	});
+
+	it ("where", function () {
+	    var I = new zip([1,2,3,4,5], [2,2,2,2,2]);
+	    assert.equal(
+		I.where(function (x) { return x[0] % 2 == 1; }).fold(
+		    function (st, x) { return st + x[1]; }, 0),
+		6);
+	});
+
+	it ("zip", function () {
+	    var I = new zip([1,1,1,1], [2,2,2,2]);
+	    assert.deepEqual(I.zip(2).force(), [[[1,2], [1,2]], [[1,2], [1,2]]]);
+	});
+
+	it ("chain", function() {
+	    var I = new zip([1,1], [2,2]);
+	    assert.deepEqual(I.chain().force(), [1,2,1,2]);
+	});
+    });
 });

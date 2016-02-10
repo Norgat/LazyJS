@@ -253,7 +253,7 @@ MultiZipIterator = function () {
 	iters = [argToIterator(arguments[0])];
     }
 
-    if (arguments.length > 2 && FakeMultiArg.prototype.isPrototypeOf(arguments[0])) {
+    if (arguments.length > 1 && FakeMultiArg.prototype.isPrototypeOf(arguments[0])) {
 	iters = [];
 	for (var i = 0; i < arguments[1].length; ++i) {
 	    iters.push(argToIterator(arguments[1][i]));
