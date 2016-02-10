@@ -492,92 +492,91 @@ Fold = function (iterator, fun, init) {
 };
 
 
-BaseIterator = function () {
+BaseIterator = function () {};
 
-    this.where = function (pred) {
-	this.source = new FilterIterator(this.source, pred);
-	return this;
-    };
+BaseIterator.prototype = LazyIterator.prototype;
 
-    this.map = function (fun) {
-	this.source = new MapIterator(this.source, fun);
-	return this;
-    };
+BaseIterator.prototype.where = function (pred) {
+    this.source = new FilterIterator(this.source, pred);
+    return this;
+};
 
-    this.until = function (pred) {
-	this.source = new WhileIterator(this.source, pred);
-	return this;
-    };
+BaseIterator.prototype.map = function (fun) {
+    this.source = new MapIterator(this.source, fun);
+    return this;
+};
 
-    this.fold = function (fun, init) {
-	return Fold(this.source, fun, init);
-    };
+BaseIterator.prototype.until = function (pred) {
+    this.source = new WhileIterator(this.source, pred);
+    return this;
+};
 
-    this.zip = function (n) {
-	this.source = new ZipIterator(this.source, n);
-	return this;
-    };
+BaseIterator.prototype.fold = function (fun, init) {
+    return Fold(this.source, fun, init);
+};
 
-    this.force = function () {
+BaseIterator.prototype.zip = function (n) {
+    this.source = new ZipIterator(this.source, n);
+    return this;
+};
+
+BaseIterator.prototype.force = function () {
+    var result = [];
+    while (this.hasNext()) {
+	result.push(this.next());
+    }
+    return result;
+};
+
+BaseIterator.prototype.take = function (n) {
+    if (n > 0) {
 	var result = [];
-	while (this.hasNext()) {
+	while(this.hasNext() && n-- > 0) {
 	    result.push(this.next());
 	}
 	return result;
-    };
-
-    this.take = function (n) {
-	if (n > 0) {
-	    var result = [];
-	    while(this.hasNext() && n-- > 0) {
-		result.push(this.next());
-	    }
-	    return result;
-	}
-	return undefined;
-    };
-
-    this.drop = function (n) {
-	if (n > 0) {
-	    while(this.hasNext() && n-- > 0) {
-		this.next();
-	    }
-	    return this;
-	}
-	return undefined;
-    };
-
-    this.chain = function (deep) {
-	this.source = new ChainIterator(this.source, deep);
-	return this;
-    };    
-
-    this.next = function () {
-	return this.source.next();
-    };
-
-    this.hasNext = function () {
-	return this.source.hasNext();
-    };
-
-    this.reset = function () {
-	this.source.reset();
-	return this;
-    };
+    }
+    return undefined;
 };
 
-BaseIterator.prototype = LazyIterator.prototype;
+BaseIterator.prototype.drop = function (n) {
+    if (n > 0) {
+	while(this.hasNext() && n-- > 0) {
+	    this.next();
+	}
+	return this;
+    }
+    return undefined;
+};
+
+BaseIterator.prototype.chain = function (deep) {
+    this.source = new ChainIterator(this.source, deep);
+    return this;
+};    
+
+BaseIterator.prototype.next = function () {
+    return this.source.next();
+};
+
+BaseIterator.prototype.hasNext = function () {
+    return this.source.hasNext();
+};
+
+BaseIterator.prototype.reset = function () {
+    this.source.reset();
+    return this;
+};
 
 
 lazy = function () {
     this.source = new MultiChainIterator(new FakeMultiArg(), arguments);
 };
 
-lazy.prototype = new BaseIterator();
+lazy.prototype = BaseIterator.prototype;
 
 
 zip = function () {
     this.source = new MultiZipIterator(new FakeMultiArg(), arguments);
 };
 
-zip.prototype = new BaseIterator();
+zip.prototype = BaseIterator.prototype;
