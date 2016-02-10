@@ -3,10 +3,12 @@ isArray = function (obj) {
     return Array.isArray(obj);
 };
 
+
 // HACK
 isObject = function (obj) {
     return (typeof obj == "object");
 };
+
 
 getKeys = function (obj) {
     var lst = [];
@@ -17,6 +19,21 @@ getKeys = function (obj) {
     }
 
     return lst;
+};
+
+
+FakeMultiArg = function () {};
+
+
+argToIterator = function (arr) {
+    if (LazyIterator.prototype.isPrototypeOf(arr)) {
+	return arr;
+    } else if (isArray(arr)) {
+	return new ArrayIterator(arr);
+    } else if (isObject(arr)) {
+	return new ObjectIterator(arr);
+    }
+    throw new Error("Ivalid argument type!");
 };
 
 
@@ -225,8 +242,29 @@ ZipIterator = function (iterator, n) {
 ZipIterator.prototype = LazyIterator.prototype;
 
 
-MultizipIterator = function () {
+MultiZipIterator = function () {
     var iters = arguments;
+
+    if (arguments.length < 1) {
+	throw new Error("Too few arguments passed to MultiZipiterator.");
+    }
+
+    if (arguments.length == 1) {
+	iters = [argToIterator(arguments[0])];
+    }
+
+    if (arguments.length > 2 && FakeMultiArg.prototype.isPrototypeOf(arguments[0])) {
+	iters = [];
+	for (var i = 0; i < arguments[1].length; ++i) {
+	    iters.push(argToIterator(arguments[1][i]));
+	}
+    } else {
+	iters = [];
+	for (var j = 0; j < arguments.length; ++j) {
+	    iters.push(argToIterator(arguments[j]));
+	}
+    }
+    
     var buffer = undefined;
     var returned_p = true;
 
@@ -248,7 +286,7 @@ MultizipIterator = function () {
     };
 
     this.next = function () {
-	if (hasNext()) {
+	if (this.hasNext()) {
 	    returned_p = true;
 	    return buffer;
 	}
@@ -265,7 +303,7 @@ MultizipIterator = function () {
     this.type = 1;
 };
 
-MultizipIterator.prototype = LazyIterator.prototype;
+MultiZipIterator.prototype = LazyIterator.prototype;
 
 
 ChainIterator = function (iterator, max_deep) {
@@ -380,28 +418,13 @@ ChainIterator = function (iterator, max_deep) {
 ChainIterator.prototype = LazyIterator.prototype;
 
 
-argToIterator = function (arr) {
-    if (LazyIterator.prototype.isPrototypeOf(arr)) {
-	return arr;
-    } else if (isArray(arr)) {
-	return new ArrayIterator(arr);
-    } else if (isObject(arr)) {
-	return new ObjectIterator(arr);
-    }
-    throw new Error("Ivalid argument type!");
-};
-
-
-FakeChainArg = function () {};
-
-
 MultiChainIterator = function () {
     if (arguments.length < 1) {
 	throw new Error("Too few arguments passed to MailtiChainIterator.");
     }
 
     var args = arguments;
-    if (arguments.length == 2 && FakeChainArg.prototype.isPrototypeOf(arguments[0])) {
+    if (arguments.length == 2 && FakeMultiArg.prototype.isPrototypeOf(arguments[0])) {
 	args = arguments[1];
     }
 
@@ -469,8 +492,7 @@ Fold = function (iterator, fun, init) {
 };
 
 
-lazy = function () {    
-    this.source = new MultiChainIterator(new FakeChainArg(), arguments);
+BaseIterator = function () {
 
     this.where = function (pred) {
 	this.source = new FilterIterator(this.source, pred);
@@ -544,4 +566,18 @@ lazy = function () {
     };
 };
 
-lazy.prototype = LazyIterator.prototype;
+BaseIterator.prototype = LazyIterator.prototype;
+
+
+lazy = function () {
+    this.source = new MultiChainIterator(new FakeMultiArg(), arguments);
+};
+
+lazy.prototype = new BaseIterator();
+
+
+zip = function () {
+    this.source = new MultiZipIterator(new FakeMultiArg(), arguments);
+};
+
+zip.prototype = new BaseIterator();

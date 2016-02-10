@@ -244,15 +244,18 @@ describe("Lazy module", function () {
 	    });
 	});
 	
-	describe("Multizipiterator", function () {
+	describe("MultiZipiterator", function () {
 	    it ("new", function () {
-		var I = new MultizipIterator(
-		    new ArrayIterator([1,2]), ArrayIterator([1,2])
+		var I = new MultiZipIterator(
+		    new ArrayIterator([1,2]),
+		    new ArrayIterator([1,2])
 		);
+
+		var J = new MultiZipIterator([1,2], [3,4]);
 	    });
 
 	    it ("apply iterator", function () {
-		var I = new MultizipIterator(
+		var I = new MultiZipIterator(
 		    new ArrayIterator(["a", "b"]), new ArrayIterator([1,2])
 		);
 
@@ -260,7 +263,7 @@ describe("Lazy module", function () {
 	    });
 
 	    it ("reset", function () {
-		var I = new MultizipIterator(
+		var I = new MultiZipIterator(
 		    new ArrayIterator(["a", "b"]), new ArrayIterator([1,2])
 		);
 
