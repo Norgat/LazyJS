@@ -317,6 +317,31 @@ describe("Lazy module", function () {
 		assert.equal(I.hasNext(), false);
 	    });
 	});
+
+	describe ("GeneratorIterator", function () {
+	    it ("new", function () {
+		var I = new GeneratorIterator(0, function (st) { return st + 1; });
+	    });
+
+	    it ("hasNext", function () {
+		var I = new GeneratorIterator(0, function (st) { return st + 1; });
+		assert.equal(I.hasNext(), true);
+	    });
+
+	    it ("next", function () {
+		var I = new GeneratorIterator(0, function (st) { return st + 1; });
+		assert.equal(I.next(), 1);
+		assert.equal(I.next(), 2);
+		assert.equal(I.next(), 3);
+	    });
+
+	    it ("reset", function () {
+		var I = new GeneratorIterator(0, function (st) { return st + 1; });
+		I.next();
+		I.reset();
+		assert.equal(I.next(), 1);
+	    });
+	});
     });
     
 
@@ -327,6 +352,12 @@ describe("Lazy module", function () {
 	    
 	    var res = Fold(I, function (st, k, v) { return st + k + v; }, 0);
 	    assert.equal(res, 16);
+	});
+
+	it ("gen wrapper", function () {
+	    var I = gen(0, function (st) { return st + 1; });
+
+	    assert.equal(I.next(), 1);
 	});
     });
     

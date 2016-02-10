@@ -472,6 +472,30 @@ MultiChainIterator = function () {
 MultiChainIterator.prototype = LazyIterator.prototype;
 
 
+GeneratorIterator = function (start, gen_fun) {
+    var state = start;
+
+    this.hasNext = function () { return true; };
+    
+    this.next = function () {
+	state = gen_fun(state);
+	return state;
+    };
+
+    this.reset = function () {
+	state = start;
+    };
+
+    this.type = 1;    
+};
+
+GeneratorIterator.prototype = LazyIterator.prototype;
+
+gen = function (start, gen_fun) {
+    return new GeneratorIterator(start, gen_fun);
+};
+
+
 Fold = function (iterator, fun, init) {
     var state = init;
 
