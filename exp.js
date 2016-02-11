@@ -1,606 +1,612 @@
 
-isArray = function (obj) {
-    return Array.isArray(obj);
-};
-
-
-// HACK
-isObject = function (obj) {
-    return (typeof obj == "object");
-};
-
-
-getKeys = function (obj) {
-    var lst = [];
-    for (var k in obj) {
-	if (obj.hasOwnProperty(k)) {
-	    lst.push(k);
-	}
-    }
-
-    return lst;
-};
-
-
-FakeMultiArg = function () {};
-
-
-argToIterator = function (arr) {
-    if (LazyIterator.prototype.isPrototypeOf(arr)) {
-	return arr;
-    } else if (isArray(arr)) {
-	return new ArrayIterator(arr);
-    } else if (isObject(arr)) {
-	return new ObjectIterator(arr);
-    }
-    throw new Error("Ivalid argument type!");
-};
-
-
-LazyIterator = function () {};
-
-LazyIterator.prototype.next = function () {
-    throw new Error("Realization of next() is undefined.");
-};
-
-LazyIterator.prototype.hasNext = function () {
-    throw new Error("Realization of hasNext() is undefined.");
-};
-
-LazyIterator.prototype.reset = function () {
-    throw new Error("Realisation of reset() is undefined.");
-};
-
-
-ArrayIterator = function (obj) {
-    if (!isArray(obj)) {
-	throw new Error("Argument isn't Array.");
-    }
-
-    var state = 0;
-
-    this.hasNext = function () {
-	return state < obj.length;
-    };
-
-    this.next = function () {
-	if (this.hasNext()) {
-	    return obj[state++];
-	}
-	return undefined;
-    }; 
-
-    this.reset = function () {
-	state = 0;
-    };
-
-    this.type = 1;
-};
-
-ArrayIterator.prototype = LazyIterator.prototype;
-
-
-ObjectIterator = function (obj) {
-    var keyIterator = new ArrayIterator(getKeys(obj));
-
-    this.next = function () {
-	if (keyIterator.hasNext()) {
-	    var key = keyIterator.next();
-	    var val = obj[key];
-	    return [key, val];
-	};
-
-	return undefined;
-    };
-
-    this.hasNext = keyIterator.hasNext;
-    this.reset = keyIterator.reset;
-    this.type = 2;
-};
-
-ObjectIterator.prototype = LazyIterator.prototype;
-
-
-MapIterator = function (iterator, fun) {
-    if (iterator.type == 1) {
-	this.next = function () {
-	    if (iterator.hasNext()) {
-		return fun(iterator.next());
-	    }
-	    return undefined;
-	};
-    } else if (iterator.type == 2) {
-	this.next = function () {
-	    if (iterator.hasNext()) {
-		return fun.apply(this, iterator.next());
-	    }
-	    return undefined;
-	};
-    }
-
-    this.hasNext = iterator.hasNext;
-    this.reset = iterator.reset;
-    this.type = iterator.type;
-};
-
-MapIterator.prototype = LazyIterator.prototype;
-
-
-FilterIterator = function (iterator, pred) {
-    var buff = undefined;
-    var not_erased_flag = false;
-
-    var pred_fun = undefined;
-    if (iterator.type == 1) {
-	pred_fun = pred;
-    } else if (iterator.type == 2) {
-	pred_fun = function (key_value) { return pred.apply(this, key_value); };
-    }
-    
-    this.hasNext = function () {
-	if (not_erased_flag) { return true; }
+LZY = (function () {
+    var exports = {};
 	
-	while (iterator.hasNext()) {
-	    var item = iterator.next();
-	    if (pred_fun(item)) {
-		buff = item;
-		not_erased_flag = true;
-		return true;
+    exports.isArray = function (obj) {
+	return Array.isArray(obj);
+    };
+
+
+    // HACK
+    exports.isObject = function (obj) {
+	return (typeof obj == "object");
+    };
+
+
+    exports.getKeys = function (obj) {
+	var lst = [];
+	for (var k in obj) {
+	    if (obj.hasOwnProperty(k)) {
+		lst.push(k);
 	    }
 	}
-	
-	return false;
+
+	return lst;
     };
 
-    this.next = function () {
-	if (this.hasNext()) {
-	    not_erased_flag = false;
-	    return buff;
+
+    exports.FakeMultiArg = function () {};
+
+
+    exports.argToIterator = function (arr) {
+	if (exports.LazyIterator.prototype.isPrototypeOf(arr)) {
+	    return arr;
+	} else if (exports.isArray(arr)) {
+	    return new exports.ArrayIterator(arr);
+	} else if (exports.isObject(arr)) {
+	    return new exports.ObjectIterator(arr);
 	}
-	return undefined;
+	throw new Error("Ivalid argument type!");
     };
 
-    this.reset = iterator.reset;
-    this.type = iterator.type;
-};
 
-FilterIterator.prototype = LazyIterator.prototype;
+    exports.LazyIterator = function () {};
+
+    exports.LazyIterator.prototype.next = function () {
+	throw new Error("Realization of next() is undefined.");
+    };
+
+    exports.LazyIterator.prototype.hasNext = function () {
+	throw new Error("Realization of hasNext() is undefined.");
+    };
+
+    exports.LazyIterator.prototype.reset = function () {
+	throw new Error("Realisation of reset() is undefined.");
+    };
 
 
-WhileIterator = function (iterator, pred) {
-    var stop_flag = false;
-    var buff = undefined;
-    var buff_flag = false;
-
-    var pred_fun = undefined;
-    if (iterator.type == 1) {
-	pred_fun = pred;
-    } else if (iterator.type == 2) {
-	pred_fun = function(kv) { return pred.apply(this, kv); };
-    }
-
-    this.hasNext = function () {
-	if (stop_flag) { return false; }
-	if (iterator.hasNext()) {
-	    buff = iterator.next();
-	    if (pred_fun(buff)) {
-		buff_flag = true;
-		return true;
-	    } else {
-		buff_flag = false;
-		return false;
-	    }
-	} else {
-	    stop_flag = true;
+    exports.ArrayIterator = function (obj) {
+	if (!exports.isArray(obj)) {
+	    throw new Error("Argument isn't Array.");
 	}
-	return undefined;
-    };
 
-    this.next = function () {
-	if (buff_flag) {
-	    buff_flag = false;
-	    return buff;
-	} else {
+	var state = 0;
+
+	this.hasNext = function () {
+	    return state < obj.length;
+	};
+
+	this.next = function () {
 	    if (this.hasNext()) {
-		buff_flag = false;
+		return obj[state++];
+	    }
+	    return undefined;
+	}; 
+
+	this.reset = function () {
+	    state = 0;
+	};
+
+	this.type = 1;
+    };
+
+    exports.ArrayIterator.prototype = exports.LazyIterator.prototype;
+
+
+    exports.ObjectIterator = function (obj) {
+	var keyIterator = new exports.ArrayIterator(exports.getKeys(obj));
+
+	this.next = function () {
+	    if (keyIterator.hasNext()) {
+		var key = keyIterator.next();
+		var val = obj[key];
+		return [key, val];
+	    };
+
+	    return undefined;
+	};
+
+	this.hasNext = keyIterator.hasNext;
+	this.reset = keyIterator.reset;
+	this.type = 2;
+    };
+
+    exports.ObjectIterator.prototype = exports.LazyIterator.prototype;
+
+
+    exports.MapIterator = function (iterator, fun) {
+	if (iterator.type == 1) {
+	    this.next = function () {
+		if (iterator.hasNext()) {
+		    return fun(iterator.next());
+		}
+		return undefined;
+	    };
+	} else if (iterator.type == 2) {
+	    this.next = function () {
+		if (iterator.hasNext()) {
+		    return fun.apply(this, iterator.next());
+		}
+		return undefined;
+	    };
+	}
+
+	this.hasNext = iterator.hasNext;
+	this.reset = iterator.reset;
+	this.type = iterator.type;
+    };
+
+    exports.MapIterator.prototype = exports.LazyIterator.prototype;
+
+
+    exports.FilterIterator = function (iterator, pred) {
+	var buff = undefined;
+	var not_erased_flag = false;
+
+	var pred_fun = undefined;
+	if (iterator.type == 1) {
+	    pred_fun = pred;
+	} else if (iterator.type == 2) {
+	    pred_fun = function (key_value) { return pred.apply(this, key_value); };
+	}
+	
+	this.hasNext = function () {
+	    if (not_erased_flag) { return true; }
+	    
+	    while (iterator.hasNext()) {
+		var item = iterator.next();
+		if (pred_fun(item)) {
+		    buff = item;
+		    not_erased_flag = true;
+		    return true;
+		}
+	    }
+	    
+	    return false;
+	};
+
+	this.next = function () {
+	    if (this.hasNext()) {
+		not_erased_flag = false;
 		return buff;
 	    }
-	}
-	return undefined;
+	    return undefined;
+	};
+
+	this.reset = iterator.reset;
+	this.type = iterator.type;
     };
 
-    this.reset = iterator.reset;
-    this.type = iterator.type;
-};
-
-WhileIterator.prototype = LazyIterator.prototype;
+    exports.FilterIterator.prototype = exports.LazyIterator.prototype;
 
 
-ZipIterator = function (iterator, n) {
-    if (typeof n != "number" || n < 1) {
-	throw new Error("ZipIterator: Invalid zip number");
-    }
-    
-    this.next = function () {
-	var buff = new Array(n);
-	for (var i = 0; i < n; ++i) {
+    exports.WhileIterator = function (iterator, pred) {
+	var stop_flag = false;
+	var buff = undefined;
+	var buff_flag = false;
+
+	var pred_fun = undefined;
+	if (iterator.type == 1) {
+	    pred_fun = pred;
+	} else if (iterator.type == 2) {
+	    pred_fun = function(kv) { return pred.apply(this, kv); };
+	}
+
+	this.hasNext = function () {
+	    if (stop_flag) { return false; }
 	    if (iterator.hasNext()) {
-		buff[i] = iterator.next();
-	    } else {
-		buff[i] = undefined;
-	    }
-	}
-
-	return buff;
-    };
-
-    this.hasNext = iterator.hasNext;
-    this.reset = iterator.reset;
-    this.type = 1;
-};
-
-ZipIterator.prototype = LazyIterator.prototype;
-
-
-MultiZipIterator = function () {
-    var iters = arguments;
-
-    if (arguments.length < 1) {
-	throw new Error("Too few arguments passed to MultiZipiterator.");
-    }
-
-    if (arguments.length == 1) {
-	iters = [argToIterator(arguments[0])];
-    }
-
-    if (arguments.length > 1 && FakeMultiArg.prototype.isPrototypeOf(arguments[0])) {
-	iters = [];
-	for (var i = 0; i < arguments[1].length; ++i) {
-	    iters.push(argToIterator(arguments[1][i]));
-	}
-    } else {
-	iters = [];
-	for (var j = 0; j < arguments.length; ++j) {
-	    iters.push(argToIterator(arguments[j]));
-	}
-    }
-    
-    var buffer = undefined;
-    var returned_p = true;
-
-    this.hasNext = function () {
-	if (!returned_p) { return true; }
-	
-	var tmp_buf = [];
-	for (var i = 0; i < iters.length; ++i) {
-	    if (iters[i].hasNext()) {
-		tmp_buf.push(iters[i].next());
-	    } else {
-		return false;
-	    }
-	}
-
-	buffer = tmp_buf;
-	returned_p = false;
-	return true;
-    };
-
-    this.next = function () {
-	if (this.hasNext()) {
-	    returned_p = true;
-	    return buffer;
-	}
-	return undefined;
-    };
-
-    this.reset = function () {
-	for (var i = 0; i < iters.length; ++i) {
-	    iters[i].reset();
-	}
-	returned_p = true;
-    };
-
-    this.type = 1;
-};
-
-MultiZipIterator.prototype = LazyIterator.prototype;
-
-
-ChainIterator = function (iterator, max_deep) {
-    var buffer = [];
-    var indices = [];
-
-    var elem_buffer = undefined;
-    var returned_p = true;
-
-    var buffer_extract = function () {
-	var arr = buffer[buffer.length - 1];
-	var indx = indices[indices.length - 1];
-
-	var elem = arr[indx++];
-
-	var process_indx = function () {
-	    if (indx >= arr.length) {
-		buffer.pop();
-		indices.pop();
-
-		// Update index on prev array
-		if (buffer.length > 0) {
-		    indices[indices.length - 1]++;
+		buff = iterator.next();
+		if (pred_fun(buff)) {
+		    buff_flag = true;
+		    return true;
+		} else {
+		    buff_flag = false;
+		    return false;
 		}
 	    } else {
-		indices[indices.length - 1] = indx;
+		stop_flag = true;
 	    }
+	    return undefined;
 	};
+
+	this.next = function () {
+	    if (buff_flag) {
+		buff_flag = false;
+		return buff;
+	    } else {
+		if (this.hasNext()) {
+		    buff_flag = false;
+		    return buff;
+		}
+	    }
+	    return undefined;
+	};
+
+	this.reset = iterator.reset;
+	this.type = iterator.type;
+    };
+
+    exports.WhileIterator.prototype = exports.LazyIterator.prototype;
+
+
+    exports.ZipIterator = function (iterator, n) {
+	if (typeof n != "number" || n < 1) {
+	    throw new Error("ZipIterator: Invalid zip number");
+	}
 	
-	if (isArray(elem)) {
-	    if (!(buffer.length >= max_deep)) {
-		buffer.push(elem);
-		indices.push(0);
-		return false;
+	this.next = function () {
+	    var buff = new Array(n);
+	    for (var i = 0; i < n; ++i) {
+		if (iterator.hasNext()) {
+		    buff[i] = iterator.next();
+		} else {
+		    buff[i] = undefined;
+		}
+	    }
+
+	    return buff;
+	};
+
+	this.hasNext = iterator.hasNext;
+	this.reset = iterator.reset;
+	this.type = 1;
+    };
+
+    exports.ZipIterator.prototype = exports.LazyIterator.prototype;
+
+
+    exports.MultiZipIterator = function () {
+	var iters = arguments;
+
+	if (arguments.length < 1) {
+	    throw new Error("Too few arguments passed to MultiZipiterator.");
+	}
+
+	if (arguments.length == 1) {
+	    iters = [exports.argToIterator(arguments[0])];
+	}
+
+	if (arguments.length > 1 && exports.FakeMultiArg.prototype.isPrototypeOf(arguments[0])) {
+	    iters = [];
+	    for (var i = 0; i < arguments[1].length; ++i) {
+		iters.push(exports.argToIterator(arguments[1][i]));
+	    }
+	} else {
+	    iters = [];
+	    for (var j = 0; j < arguments.length; ++j) {
+		iters.push(exports.argToIterator(arguments[j]));
+	    }
+	}
+	
+	var buffer = undefined;
+	var returned_p = true;
+
+	this.hasNext = function () {
+	    if (!returned_p) { return true; }
+	    
+	    var tmp_buf = [];
+	    for (var i = 0; i < iters.length; ++i) {
+		if (iters[i].hasNext()) {
+		    tmp_buf.push(iters[i].next());
+		} else {
+		    return false;
+		}
+	    }
+
+	    buffer = tmp_buf;
+	    returned_p = false;
+	    return true;
+	};
+
+	this.next = function () {
+	    if (this.hasNext()) {
+		returned_p = true;
+		return buffer;
+	    }
+	    return undefined;
+	};
+
+	this.reset = function () {
+	    for (var i = 0; i < iters.length; ++i) {
+		iters[i].reset();
+	    }
+	    returned_p = true;
+	};
+
+	this.type = 1;
+    };
+
+    exports.MultiZipIterator.prototype = exports.LazyIterator.prototype;
+
+
+    exports.ChainIterator = function (iterator, max_deep) {
+	var buffer = [];
+	var indices = [];
+
+	var elem_buffer = undefined;
+	var returned_p = true;
+
+	var buffer_extract = function () {
+	    var arr = buffer[buffer.length - 1];
+	    var indx = indices[indices.length - 1];
+
+	    var elem = arr[indx++];
+
+	    var process_indx = function () {
+		if (indx >= arr.length) {
+		    buffer.pop();
+		    indices.pop();
+
+		    // Update index on prev array
+		    if (buffer.length > 0) {
+			indices[indices.length - 1]++;
+		    }
+		} else {
+		    indices[indices.length - 1] = indx;
+		}
+	    };
+	    
+	    if (exports.isArray(elem)) {
+		if (!(buffer.length >= max_deep)) {
+		    buffer.push(elem);
+		    indices.push(0);
+		    return false;
+		} else {
+		    elem_buffer = elem;
+		    returned_p = false;
+
+		    process_indx();		
+		    return true;
+		}
 	    } else {
 		elem_buffer = elem;
 		returned_p = false;
 
-		process_indx();		
+		process_indx();
 		return true;
-	    }
-	} else {
-	    elem_buffer = elem;
-	    returned_p = false;
-
-	    process_indx();
-	    return true;
-	}	
+	    }	
+	    
+	    return false;
+	};
 	
-	return false;
-    };
-    
-    this.hasNext = function () {
-	while (buffer.length > 0 || iterator.hasNext()) {
-	    // Try extract elem from buffer
-	    if (buffer.length > 0) {
-		var result = buffer_extract();
-		if (result) {
-		    return result;
-		}
-		// Try extract elem from iterator
-	    } else if (iterator.hasNext()) {
-		var elem = iterator.next();
-		if (isArray(elem)) {
-		    // if (deep == undefined) this pred is true
-		    // if (deep is int) then it's equal to (buffer.length < deep)
-		    if (!(buffer.length >= max_deep)) {
-			buffer.push(elem);
-			indices.push(0);
+	this.hasNext = function () {
+	    while (buffer.length > 0 || iterator.hasNext()) {
+		// Try extract elem from buffer
+		if (buffer.length > 0) {
+		    var result = buffer_extract();
+		    if (result) {
+			return result;
+		    }
+		    // Try extract elem from iterator
+		} else if (iterator.hasNext()) {
+		    var elem = iterator.next();
+		    if (exports.isArray(elem)) {
+			// if (deep == undefined) this pred is true
+			// if (deep is int) then it's equal to (buffer.length < deep)
+			if (!(buffer.length >= max_deep)) {
+			    buffer.push(elem);
+			    indices.push(0);
+			} else {
+			    elem_buffer = elem;
+			    returned_p = false;
+			    return true;
+			}
 		    } else {
 			elem_buffer = elem;
 			returned_p = false;
 			return true;
 		    }
-		} else {
-		    elem_buffer = elem;
-		    returned_p = false;
-		    return true;
 		}
 	    }
-	}
 
-	return false;
-    };
+	    return false;
+	};
 	
 
-    this.next = function () {
-	if (!returned_p) {
-	    returned_p = true;
-	    return elem_buffer;
-	}
+	this.next = function () {
+	    if (!returned_p) {
+		returned_p = true;
+		return elem_buffer;
+	    }
 
-	if (hasNext()) {
-	    returned_p = true;
-	    return elem_buffer;
-	}
+	    if (this.hasNext()) {
+		returned_p = true;
+		return elem_buffer;
+	    }
 
-	return undefined;
-    };
-
-    this.reset = function () {
-	buffer = [];
-	indices = [];
-	elem_buffer = undefined;
-	returned_p = true;
-	iterator.reset();
-    };
-
-    this.type = 1;
-};
-
-ChainIterator.prototype = LazyIterator.prototype;
-
-
-MultiChainIterator = function () {
-    if (arguments.length < 1) {
-	throw new Error("Too few arguments passed to MailtiChainIterator.");
-    }
-
-    var args = arguments;
-    if (arguments.length == 2 && FakeMultiArg.prototype.isPrototypeOf(arguments[0])) {
-	args = arguments[1];
-    }
-
-    if (args.length == 1) {
-	return argToIterator(args[0]);
-    }
-
-    var iterators = [];
-    for (var i in args) {
-	iterators.push(argToIterator(args[i]));
-    }
-
-    var indx = 0;
-
-    this.hasNext = function () {
-	while (indx < iterators.length && !iterators[indx].hasNext()) {
-	    indx++;
-	}
-
-	if (indx >= iterators.length) {
-	    return false;
-	} else {
-	    return true;
-	}	
-    };
-
-    this.next = function () {
-	if (this.hasNext()) {
-	    return iterators[indx].next();
-	} else {
 	    return undefined;
-	}
+	};
+
+	this.reset = function () {
+	    buffer = [];
+	    indices = [];
+	    elem_buffer = undefined;
+	    returned_p = true;
+	    iterator.reset();
+	};
+
+	this.type = 1;
     };
 
-    this.reset = function () {
-	for (var i in iterators) {
-	    iterators[i].reset();
+    exports.ChainIterator.prototype = exports.LazyIterator.prototype;
+
+
+    exports.MultiChainIterator = function () {
+	if (arguments.length < 1) {
+	    throw new Error("Too few arguments passed to MailtiChainIterator.");
 	}
-	indx = 0;
+
+	var args = arguments;
+	if (arguments.length == 2 && exports.FakeMultiArg.prototype.isPrototypeOf(arguments[0])) {
+	    args = arguments[1];
+	}
+
+	if (args.length == 1) {
+	    return exports.argToIterator(args[0]);
+	}
+
+	var iterators = [];
+	for (var i in args) {
+	    iterators.push(exports.argToIterator(args[i]));
+	}
+
+	var indx = 0;
+
+	this.hasNext = function () {
+	    while (indx < iterators.length && !iterators[indx].hasNext()) {
+		indx++;
+	    }
+
+	    if (indx >= iterators.length) {
+		return false;
+	    } else {
+		return true;
+	    }	
+	};
+
+	this.next = function () {
+	    if (this.hasNext()) {
+		return iterators[indx].next();
+	    } else {
+		return undefined;
+	    }
+	};
+
+	this.reset = function () {
+	    for (var i in iterators) {
+		iterators[i].reset();
+	    }
+	    indx = 0;
+	};
+
+	this.type = 1;
     };
 
-    this.type = 1;
-};
-
-MultiChainIterator.prototype = LazyIterator.prototype;
+    exports.MultiChainIterator.prototype = exports.LazyIterator.prototype;
 
 
-GeneratorIterator = function (start, gen_fun) {
-    var state = start;
+    exports.GeneratorIterator = function (start, gen_fun) {
+	var state = start;
 
-    this.hasNext = function () { return true; };
-    
-    this.next = function () {
-	state = gen_fun(state);
+	this.hasNext = function () { return true; };
+	
+	this.next = function () {
+	    state = gen_fun(state);
+	    return state;
+	};
+
+	this.reset = function () {
+	    state = start;
+	};
+
+	this.type = 1;    
+    };
+
+    exports.GeneratorIterator.prototype = exports.LazyIterator.prototype;
+
+    exports.gen = function (start, gen_fun) {
+	return new exports.GeneratorIterator(start, gen_fun);
+    };
+
+
+    exports.Fold = function (iterator, fun, init) {
+	var state = init;
+
+	var apply_fun = undefined;
+	if (iterator.type == 1) {
+	    apply_fun = fun;
+	} else if (iterator.type == 2) {
+	    apply_fun = function (state, kv) {
+		return fun(state, kv[0], kv[1]);
+	    };
+	}
+
+	while (iterator.hasNext()) {
+	    state = apply_fun(state, iterator.next());
+	}
+
 	return state;
     };
 
-    this.reset = function () {
-	state = start;
+
+    exports.BaseIterator = function () {};
+
+    exports.BaseIterator.prototype = exports.LazyIterator.prototype;
+
+    exports.BaseIterator.prototype.where = function (pred) {
+	this.source = new exports.FilterIterator(this.source, pred);
+	return this;
     };
 
-    this.type = 1;    
-};
+    exports.BaseIterator.prototype.map = function (fun) {
+	this.source = new exports.MapIterator(this.source, fun);
+	return this;
+    };
 
-GeneratorIterator.prototype = LazyIterator.prototype;
+    exports.BaseIterator.prototype.until = function (pred) {
+	this.source = new exports.WhileIterator(this.source, pred);
+	return this;
+    };
 
-gen = function (start, gen_fun) {
-    return new GeneratorIterator(start, gen_fun);
-};
+    exports.BaseIterator.prototype.fold = function (fun, init) {
+	return Fold(this.source, fun, init);
+    };
 
+    exports.BaseIterator.prototype.zip = function (n) {
+	this.source = new exports.ZipIterator(this.source, n);
+	return this;
+    };
 
-Fold = function (iterator, fun, init) {
-    var state = init;
-
-    var apply_fun = undefined;
-    if (iterator.type == 1) {
-	apply_fun = fun;
-    } else if (iterator.type == 2) {
-	apply_fun = function (state, kv) {
-	    return fun(state, kv[0], kv[1]);
-	};
-    }
-
-    while (iterator.hasNext()) {
-	state = apply_fun(state, iterator.next());
-    }
-
-    return state;
-};
-
-
-BaseIterator = function () {};
-
-BaseIterator.prototype = LazyIterator.prototype;
-
-BaseIterator.prototype.where = function (pred) {
-    this.source = new FilterIterator(this.source, pred);
-    return this;
-};
-
-BaseIterator.prototype.map = function (fun) {
-    this.source = new MapIterator(this.source, fun);
-    return this;
-};
-
-BaseIterator.prototype.until = function (pred) {
-    this.source = new WhileIterator(this.source, pred);
-    return this;
-};
-
-BaseIterator.prototype.fold = function (fun, init) {
-    return Fold(this.source, fun, init);
-};
-
-BaseIterator.prototype.zip = function (n) {
-    this.source = new ZipIterator(this.source, n);
-    return this;
-};
-
-BaseIterator.prototype.force = function () {
-    var result = [];
-    while (this.hasNext()) {
-	result.push(this.next());
-    }
-    return result;
-};
-
-BaseIterator.prototype.take = function (n) {
-    if (n > 0) {
+    exports.BaseIterator.prototype.force = function () {
 	var result = [];
-	while(this.hasNext() && n-- > 0) {
+	while (this.hasNext()) {
 	    result.push(this.next());
 	}
 	return result;
-    }
-    return undefined;
-};
+    };
 
-BaseIterator.prototype.drop = function (n) {
-    if (n > 0) {
-	while(this.hasNext() && n-- > 0) {
-	    this.next();
+    exports.BaseIterator.prototype.take = function (n) {
+	if (n > 0) {
+	    var result = [];
+	    while(this.hasNext() && n-- > 0) {
+		result.push(this.next());
+	    }
+	    return result;
 	}
+	return undefined;
+    };
+
+    exports.BaseIterator.prototype.drop = function (n) {
+	if (n > 0) {
+	    while(this.hasNext() && n-- > 0) {
+		this.next();
+	    }
+	    return this;
+	}
+	return undefined;
+    };
+
+    exports.BaseIterator.prototype.chain = function (deep) {
+	this.source = new exports.ChainIterator(this.source, deep);
 	return this;
-    }
-    return undefined;
-};
+    };    
 
-BaseIterator.prototype.chain = function (deep) {
-    this.source = new ChainIterator(this.source, deep);
-    return this;
-};    
+    exports.BaseIterator.prototype.next = function () {
+	return this.source.next();
+    };
 
-BaseIterator.prototype.next = function () {
-    return this.source.next();
-};
+    exports.BaseIterator.prototype.hasNext = function () {
+	return this.source.hasNext();
+    };
 
-BaseIterator.prototype.hasNext = function () {
-    return this.source.hasNext();
-};
-
-BaseIterator.prototype.reset = function () {
-    this.source.reset();
-    return this;
-};
+    exports.BaseIterator.prototype.reset = function () {
+	this.source.reset();
+	return this;
+    };
 
 
-lazy = function () {
-    this.source = new MultiChainIterator(new FakeMultiArg(), arguments);
-};
+    exports.lazy = function () {
+	this.source = new exports.MultiChainIterator(new exports.FakeMultiArg(), arguments);
+    };
 
-lazy.prototype = BaseIterator.prototype;
+    exports.lazy.prototype = exports.BaseIterator.prototype;
 
 
-zip = function () {
-    this.source = new MultiZipIterator(new FakeMultiArg(), arguments);
-};
+    exports.zip = function () {
+	this.source = new exports.MultiZipIterator(new exports.FakeMultiArg(), arguments);
+    };
 
-zip.prototype = BaseIterator.prototype;
+    exports.zip.prototype = exports.BaseIterator.prototype;
+
+    return exports;
+}());
