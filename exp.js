@@ -355,8 +355,6 @@ LZY = (function () {
 		process_indx();
 		return true;
 	    }	
-	    
-	    return false;
 	};
 	
 	this.hasNext = function () {
