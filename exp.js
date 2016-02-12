@@ -539,7 +539,7 @@ LZY = (function () {
     };
 
     exports.BaseIterator.prototype.fold = function (fun, init) {
-	return Fold(this.source, fun, init);
+	return exports.Fold(this.source, fun, init);
     };
 
     exports.BaseIterator.prototype.zip = function (n) {
